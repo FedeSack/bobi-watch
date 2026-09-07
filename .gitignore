@@ -1,0 +1,13 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+.audit/
+.tools/
+.codex-home/
+.build/
+.swiftpm/
+DerivedData/
+node_modules/
+*.xcuserstate
+xcuserdata/
