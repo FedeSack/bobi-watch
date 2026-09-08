@@ -1,10 +1,10 @@
 # Independent review canary
 
-This pull request tests the repository's author and reviewer separation before branch protection becomes mandatory.
+A canary pull request tests the repository's author and reviewer separation before branch protection becomes mandatory.
 
 The canary passes only when GitHub records these results on the same head commit:
 
-- the repository policy check succeeds;
+- the `Builder repository policy` check succeeds on the exact pull-request head and GitHub records GitHub Actions as its source App;
 - the pull request author and approving reviewer are different identities;
 - GitHub records the review state as `APPROVED`;
 - the merge uses no administrator bypass.
