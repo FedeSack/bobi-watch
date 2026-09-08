@@ -1,15 +1,15 @@
 name: Repository policy
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened, edited, ready_for_review]
-  workflow_dispatch:
+    branches: [main, develop]
 
 permissions:
   contents: read
 
 concurrency:
-  group: repository-policy-${{ github.event.pull_request.number || github.ref }}
+  group: repository-policy-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
@@ -18,30 +18,45 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
+      - name: Require an internal pull request
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          BASE_REPOSITORY: ${{ github.repository }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          if [[ "$HEAD_REPOSITORY" != "$BASE_REPOSITORY" ]]; then
+            printf 'external pull requests are not enabled during bootstrap\n' >&2
+            exit 1
+          fi
+          case "$BASE_REF" in
+            main|develop) ;;
+            *)
+              printf 'unsupported protected base branch: %s\n' "$BASE_REF" >&2
+              exit 1
+              ;;
+          esac
       - name: Check out the proposed commit
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
           path: candidate
           persist-credentials: false
-      - name: Check out the protected policy
-        if: github.event_name == 'pull_request'
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Check out the canonical protected policy
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          repository: ${{ github.event.pull_request.base.repo.full_name }}
-          ref: ${{ github.event.pull_request.base.sha }}
+          repository: ${{ github.repository }}
+          ref: ${{ github.workflow_sha }}
           path: policy-source
           persist-credentials: false
       - name: Validate repository and pull request policy
         env:
-          PR_BASE_REF: ${{ github.base_ref }}
-          PR_HEAD_REF: ${{ github.head_ref }}
+          POLICY_EVENT_NAME: pull_request
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_TITLE: ${{ github.event.pull_request.title }}
         working-directory: candidate
-        run: |
-          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
-            bash "$GITHUB_WORKSPACE/policy-source/scripts/check-repository-policy.sh"
-          else
-            bash scripts/check-repository-policy.sh
-          fi
+        run: bash "$GITHUB_WORKSPACE/policy-source/scripts/check-repository-policy.sh"
