@@ -1,0 +1,44 @@
+name: Open bot-authored pull request
+
+run-name: Open ${{ github.event.client_payload.target_branch }} from ${{ github.event.client_payload.source_branch }}
+
+on:
+  repository_dispatch:
+    types: [open-bot-pull-request]
+
+permissions:
+  checks: write
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: bot-pr-${{ github.event.client_payload.source_branch }}
+  cancel-in-progress: false
+
+jobs:
+  open-pull-request:
+    name: Open bot pull request
+    if: github.repository == 'FedeSack/bobi-watch' && github.actor == 'FedeSack' && github.triggering_actor == 'FedeSack' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out the protected builder
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Promote the staged change
+        env:
+          BASE_BRANCH: develop
+          EXPECTED_ACTOR: FedeSack
+          EXPECTED_DEFAULT_REF: refs/heads/main
+          EXPECTED_REPOSITORY: FedeSack/bobi-watch
+          EXPECTED_RUN_ATTEMPT: "1"
+          EXPECTED_SOURCE_SHA: ${{ github.event.client_payload.source_sha }}
+          GH_TOKEN: ${{ github.token }}
+          PR_BODY: ${{ github.event.client_payload.body }}
+          PR_TITLE: ${{ github.event.client_payload.title }}
+          SOURCE_BRANCH: ${{ github.event.client_payload.source_branch }}
+          TARGET_BRANCH: ${{ github.event.client_payload.target_branch }}
+        run: bash scripts/open-bot-pull-request.sh

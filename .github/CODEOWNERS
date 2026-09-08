@@ -1,4 +1,17 @@
 /.github/ @FedeSack
+/.agents/ @FedeSack
+/.codex/ @FedeSack
+/.gitattributes @FedeSack
+/.gitignore @FedeSack
+/AGENTS.md @FedeSack
+**/AGENTS.md @FedeSack
 /SECURITY.md @FedeSack
+/CONTRIBUTING.md @FedeSack
+/CODE_OF_CONDUCT.md @FedeSack
+/GOVERNANCE.md @FedeSack
+/LICENSE* @FedeSack
+/NOTICE* @FedeSack
+/THIRD_PARTY_NOTICES.md @FedeSack
 /docs/governance/ @FedeSack
 /scripts/check-repository-policy.sh @FedeSack
+/scripts/open-bot-pull-request.sh @FedeSack
